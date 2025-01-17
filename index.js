@@ -26,7 +26,16 @@ async function run() {
     await client.connect();
 
     const database = client.db("EduManage");
-    // const userCollection = database.collection("users");
+    const userCollection = database.collection("users");
+
+    // Create User to Database
+
+    app.post("/users", async (req, res) => {
+      const newUser = req.body;
+      console.log("creating new user", newUser);
+      const result = await userCollection.insertOne(newUser);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
