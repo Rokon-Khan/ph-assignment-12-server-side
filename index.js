@@ -175,7 +175,7 @@ async function run() {
     await client.connect();
 
     const database = client.db("EduManage");
-    const userCollection = database.collection("users");
+    const usersCollection = database.collection("users");
 
     // Generate jwt token
     app.post("/jwt", async (req, res) => {
@@ -208,10 +208,28 @@ async function run() {
     });
 
     // Create User to Database
-    app.post("/users", async (req, res) => {
-      const newUser = req.body;
-      console.log("creating new user", newUser);
-      const result = await userCollection.insertOne(newUser);
+    // app.post("/users", async (req, res) => {
+    //   const newUser = req.body;
+    //   console.log("creating new user", newUser);
+    //   const result = await userCollection.insertOne(newUser);
+    //   res.send(result);
+    // });
+
+    // save or update a user in db
+    app.post("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = req.body;
+      // check if user exists in db
+      const isExist = await usersCollection.findOne(query);
+      if (isExist) {
+        return res.send(isExist);
+      }
+      const result = await usersCollection.insertOne({
+        ...user,
+        role: "student",
+        timestamp: Date.now(),
+      });
       res.send(result);
     });
 
