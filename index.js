@@ -176,7 +176,7 @@ async function run() {
 
     const database = client.db("EduManage");
     const usersCollection = database.collection("users");
-    const classCollection = db.collection("classes");
+    const classCollection = database.collection("classes");
 
     // Generate jwt token
     app.post("/jwt", async (req, res) => {
@@ -210,10 +210,15 @@ async function run() {
 
     // Add Class in Database
 
-    // save a plant data in db
     app.post("/allclasses", verifyToken, async (req, res) => {
       const eduClass = req.body;
       const result = await classCollection.insertOne(eduClass);
+      res.send(result);
+    });
+
+    // get all plants from db
+    app.get("/allclasses", async (req, res) => {
+      const result = await classCollection.find().limit(20).toArray();
       res.send(result);
     });
 
