@@ -242,6 +242,38 @@ async function run() {
       }
     });
 
+    // Get The Classe Detail with  id
+
+    app.get("/classes/:id", async (req, res) => {
+      const { id } = req.params;
+
+      // Validate ID
+      if (!ObjectId.isValid(id)) {
+        return res
+          .status(400)
+          .send({ success: false, message: "Invalid class ID" });
+      }
+
+      try {
+        const classData = await classCollection.findOne({
+          _id: new ObjectId(id),
+        });
+
+        if (!classData) {
+          return res
+            .status(404)
+            .send({ success: false, message: "Class not found" });
+        }
+
+        res.send(classData);
+      } catch (error) {
+        console.error("Error fetching class data:", error);
+        res
+          .status(500)
+          .send({ success: false, message: "Failed to fetch class" });
+      }
+    });
+
     // Delete My  Class
 
     app.delete("/classes/:id", async (req, res) => {
