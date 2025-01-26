@@ -242,6 +242,21 @@ async function run() {
       }
     });
 
+    // Delete My  Class
+
+    app.delete("/classes/:id", async (req, res) => {
+      const { id } = req.params;
+      try {
+        const result = await classCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: "Failed to delete class" });
+      }
+    });
+
     // Create User to Database
     // app.post("/users", async (req, res) => {
     //   const newUser = req.body;
