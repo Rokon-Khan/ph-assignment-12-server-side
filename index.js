@@ -216,10 +216,30 @@ async function run() {
       res.send(result);
     });
 
-    // get all plants from db
+    // get all classes from db
     app.get("/allclasses", async (req, res) => {
       const result = await classCollection.find().limit(20).toArray();
       res.send(result);
+    });
+
+    // teacher add Classes get from database
+    app.get("/my-classes", async (req, res) => {
+      try {
+        const { email } = req.query;
+        if (!email) {
+          return res
+            .status(400)
+            .send({ error: "Email query parameter is required" });
+        }
+        const result = await classCollection
+          .find({ "teacher.email": email })
+          .toArray();
+
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: "Failed to fetch classes" });
+      }
     });
 
     // Create User to Database
