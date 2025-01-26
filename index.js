@@ -257,6 +257,32 @@ async function run() {
       }
     });
 
+    // Update Class For teacher
+
+    // const { ObjectId } = require("mongodb");
+
+    app.put("/classes/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedClass = req.body;
+
+      try {
+        const result = await classCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedClass }
+        );
+        if (result.modifiedCount > 0) {
+          res.send({ success: true, message: "Class updated successfully" });
+        } else {
+          res.status(404).send({ success: false, message: "Class not found" });
+        }
+      } catch (error) {
+        console.error(error);
+        res
+          .status(500)
+          .send({ success: false, message: "Failed to update class" });
+      }
+    });
+
     // Create User to Database
     // app.post("/users", async (req, res) => {
     //   const newUser = req.body;
