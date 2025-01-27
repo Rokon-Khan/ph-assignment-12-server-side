@@ -343,7 +343,7 @@ async function run() {
 
     // Get user From Database
     app.get("/users", async (req, res) => {
-      const cursor = userCollection.find();
+      const cursor = usersCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
