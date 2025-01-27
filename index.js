@@ -394,6 +394,19 @@ async function run() {
       res.send(result);
     });
 
+    // All Approved Class Get Logic
+    app.get("/approved-classes", async (req, res) => {
+      try {
+        const approvedClasses = await classCollection
+          .find({ status: "approved" })
+          .toArray();
+        res.status(200).send(approvedClasses);
+      } catch (error) {
+        console.error("Error fetching approved classes:", error);
+        res.status(500).send({ error: "Internal Server Error" });
+      }
+    });
+
     // Get user From Database
     app.get("/users", async (req, res) => {
       const cursor = usersCollection.find();
