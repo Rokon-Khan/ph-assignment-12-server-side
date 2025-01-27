@@ -324,12 +324,13 @@ async function run() {
     //   res.send(result);
     // });
 
+    // update Class Status with PATCH Method
     app.patch("/allclasses/:id", async (req, res) => {
       const { id } = req.params;
       const { status } = req.body;
 
       try {
-        const result = await classesCollection.updateOne(
+        const result = await classCollection.updateOne(
           { _id: new ObjectId(id) },
           { $set: { status } }
         );
@@ -346,6 +347,32 @@ async function run() {
       } catch (error) {
         console.error("Error updating class status:", error);
         res.status(500).json({ message: "Failed to update class status" });
+      }
+    });
+
+    // Get All Class Progrss Status
+    app.get("/allclasses/:id/progress", async (req, res) => {
+      const { id } = req.params;
+
+      try {
+        const progress = await classesCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        if (!progress) {
+          return res.status(404).json({ message: "Class not found" });
+        }
+
+        // Simulate class progress details for demo
+        const progressDetails = {
+          studentsEnrolled: 25,
+          completedModules: 5,
+          totalModules: 10,
+        };
+
+        res.status(200).json({ ...progress, progressDetails });
+      } catch (error) {
+        console.error("Error fetching class progress:", error);
+        res.status(500).json({ message: "Failed to fetch class progress" });
       }
     });
 
