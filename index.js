@@ -177,6 +177,7 @@ async function run() {
     const database = client.db("EduManage");
     const usersCollection = database.collection("users");
     const classCollection = database.collection("classes");
+    const paymentsCollection = database.collection("payments");
 
     // Generate jwt token
     app.post("/jwt", async (req, res) => {
