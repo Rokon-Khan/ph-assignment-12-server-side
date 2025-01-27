@@ -348,11 +348,51 @@ async function run() {
       res.send(result);
     });
 
+    // ** Get All Users with Search Functionality **
+    app.get("/users", async (req, res) => {
+      const { search = "" } = req.query;
+
+      try {
+        const query = {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+          ],
+        };
+        const users = await usersCollection.find(query).toArray();
+        res.status(200).json(users);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).json({ message: "Failed to fetch users" });
+      }
+    });
+
     // get user role
     app.get("/users/role/:email", async (req, res) => {
       const email = req.params.email;
       const result = await usersCollection.findOne({ email });
       res.send({ role: result?.role });
+    });
+
+    // ** Make a User Admin **
+    app.patch("/users/admin/:id", async (req, res) => {
+      const { id } = req.params;
+
+      try {
+        const result = await usersCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { role: "admin" } }
+        );
+
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ message: "User role updated to admin" });
+      } catch (error) {
+        console.error("Error updating user role:", error);
+        res.status(500).json({ message: "Failed to update user role" });
+      }
     });
 
     await client.db("admin").command({ ping: 1 });
