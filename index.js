@@ -218,7 +218,7 @@ async function run() {
 
     // get all classes from db
     app.get("/allclasses", async (req, res) => {
-      const result = await classCollection.find().limit(20).toArray();
+      const result = await classCollection.find().toArray();
       res.send(result);
     });
 
@@ -322,6 +322,31 @@ async function run() {
     //   const result = await userCollection.insertOne(newUser);
     //   res.send(result);
     // });
+
+    app.patch("/allclasses/:id", async (req, res) => {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      try {
+        const result = await classesCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { status } }
+        );
+
+        if (result.modifiedCount > 0) {
+          res
+            .status(200)
+            .send({ message: "Class status updated successfully" });
+        } else {
+          res
+            .status(404)
+            .send({ message: "Class not found or already updated" });
+        }
+      } catch (error) {
+        console.error("Error updating class status:", error);
+        res.status(500).json({ message: "Failed to update class status" });
+      }
+    });
 
     // save or update a user in db
     app.post("/users/:email", async (req, res) => {
