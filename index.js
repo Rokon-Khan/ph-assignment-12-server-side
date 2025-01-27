@@ -432,6 +432,19 @@ async function run() {
         res.status(500).json({ message: "Failed to fetch users" });
       }
     });
+    // GET Class Details By ID
+    app.get("/class/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const classDetails = await classCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        res.status(200).send(classDetails);
+      } catch (error) {
+        console.error("Error fetching class details:", error);
+        res.status(500).send({ error: "Internal Server Error" });
+      }
+    });
 
     // get user role
     app.get("/users/role/:email", async (req, res) => {
@@ -458,6 +471,37 @@ async function run() {
       } catch (error) {
         console.error("Error updating user role:", error);
         res.status(500).json({ message: "Failed to update user role" });
+      }
+    });
+
+    // Make POST For The Payment Procedure
+
+    app.post("/payments", async (req, res) => {
+      try {
+        const { transactionId, classId, userId, amount, enrolledAt } = req.body;
+        const paymentDetails = {
+          transactionId,
+          classId,
+          userId,
+          amount,
+          enrolledAt,
+        };
+
+        // Store payment and enrollment information
+        await paymentsCollection.insertOne(paymentDetails);
+
+        // Update enrollment count in the class
+        await classCollection.updateOne(
+          { _id: new ObjectId(classId) },
+          { $inc: { totalEnrolment: 1 } }
+        );
+
+        res
+          .status(200)
+          .send({ success: true, message: "Payment recorded successfully!" });
+      } catch (error) {
+        console.error("Error processing payment:", error);
+        res.status(500).send({ error: "Internal Server Error" });
       }
     });
 
