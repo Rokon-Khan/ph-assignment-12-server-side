@@ -546,6 +546,25 @@ async function run() {
       }
     });
 
+    // Get Dashboard Stats
+
+    app.get("/dashboard-stats", async (req, res) => {
+      try {
+        const totalUsers = await usersCollection.countDocuments();
+        const totalClasses = await classCollection.countDocuments();
+        const totalEnrollments = await paymentsCollection.countDocuments();
+
+        res.status(200).send({
+          totalUsers,
+          totalClasses,
+          totalEnrollments,
+        });
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+        res.status(500).send({ error: "Internal Server Error" });
+      }
+    });
+
     // Get Enrolled Classes for the User
 
     app.get("/enrolled-classes", async (req, res) => {
