@@ -178,6 +178,7 @@ async function run() {
     const usersCollection = database.collection("users");
     const classCollection = database.collection("classes");
     const paymentsCollection = database.collection("payments");
+    const teacherApplicationsCollection = database.collection("newApplication");
 
     // Generate jwt token
     app.post("/jwt", async (req, res) => {
@@ -356,7 +357,7 @@ async function run() {
       const { id } = req.params;
 
       try {
-        const progress = await classesCollection.findOne({
+        const progress = await classCollection.findOne({
           _id: new ObjectId(id),
         });
         if (!progress) {
@@ -601,6 +602,130 @@ async function run() {
       } catch (error) {
         console.error("Error fetching enrolled classes:", error);
         res.status(500).send({ error: "Internal Server Error" });
+      }
+    });
+
+    // Applying For Teacher Request
+    app.post("/apply-teacher", async (req, res) => {
+      try {
+        const { name, email, image, experience, title, category } = req.body;
+
+        const newApplication = {
+          name,
+          email,
+          image,
+          experience,
+          title,
+          category,
+          status: "pending", // Default status
+          appliedAt: new Date(),
+        };
+
+        const result = await teacherApplicationsCollection.insertOne(
+          newApplication
+        );
+        res.status(201).json({
+          message: "Application submitted successfully",
+          id: result.insertedId,
+        });
+      } catch (error) {
+        res
+          .status(500)
+          .json({ error: "Server error while submitting application" });
+      }
+    });
+
+    // GET: Fetch all teacher requests
+    app.get("/teacher-requests", async (req, res) => {
+      const result = await teacherApplicationsCollection.find().toArray();
+      res.send(result);
+    });
+
+    // app.put("/users/:email", async (req, res) => {
+    //   const { email } = req.params;
+    //   const applicationData = req.body;
+
+    //   try {
+    //     const result = await database
+    //       .collection("users")
+    //       .updateOne({ email }, { $set: applicationData });
+
+    //     if (result.modifiedCount > 0) {
+    //       res.status(200).json({ message: "User updated successfully!" });
+    //     } else {
+    //       res.status(404).json({ message: "User not found!" });
+    //     }
+    //   } catch (error) {
+    //     console.error(error);
+    //     res.status(500).json({ message: "Error updating user" });
+    //   }
+    // });
+
+    app.patch("/approve-teacher", async (req, res) => {
+      const { email } = req.body;
+
+      try {
+        // Update TeacherCollection status
+        const teacherUpdate =
+          await teacherApplicationsCollection.findOneAndUpdate(
+            { email },
+            { $set: { status: "approved" } },
+            { new: true }
+          );
+
+        if (!teacherUpdate) {
+          return res
+            .status(404)
+            .json({ message: "Teacher request not found!" });
+        }
+
+        // Update UserCollection role
+        const userUpdate = await usersCollection.findOneAndUpdate(
+          { email },
+          { $set: { role: "teacher" } },
+          { new: true }
+        );
+
+        if (!userUpdate) {
+          return res.status(404).json({ message: "User not found!" });
+        }
+
+        res.status(200).json({
+          message: "Teacher request approved and user role updated!",
+          teacher: teacherUpdate,
+          user: userUpdate,
+        });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error updating records!" });
+      }
+    });
+    // Reject Teacher Request
+    app.patch("/reject-teacher", async (req, res) => {
+      const { email } = req.body;
+
+      try {
+        // Update TeacherCollection status to "rejected"
+        const teacherUpdate =
+          await teacherApplicationsCollection.findOneAndUpdate(
+            { email },
+            { $set: { status: "rejected" } },
+            { new: true }
+          );
+
+        if (!teacherUpdate) {
+          return res
+            .status(404)
+            .json({ message: "Teacher request not found!" });
+        }
+
+        res.status(200).json({
+          message: "Teacher request rejected successfully!",
+          teacher: teacherUpdate,
+        });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error updating records!" });
       }
     });
 
