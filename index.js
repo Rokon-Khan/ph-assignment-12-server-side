@@ -728,6 +728,66 @@ async function run() {
         res.status(500).json({ message: "Error updating records!" });
       }
     });
+    // Teacher Rquest show in Student Dashboard
+    app.get("/teacher-requests/:email", async (req, res) => {
+      const { email } = req.params;
+
+      try {
+        const request = await teacherApplicationsCollection.findOne({ email });
+
+        if (!request) {
+          return res
+            .status(404)
+            .json({ message: "Teacher request not found!" });
+        }
+
+        if (request.status === "approved") {
+          return res
+            .status(200)
+            .json({ message: "Your request has been approved!" });
+        }
+
+        res.status(200).json(request);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching teacher request!" });
+      }
+    });
+    // Rejected Request send Again With Patch Method
+    app.patch("/send-teacher-request", async (req, res) => {
+      const { email, experience, title, category } = req.body;
+
+      try {
+        const updatedRequest =
+          await teacherApplicationsCollection.findOneAndUpdate(
+            { email },
+            {
+              $set: {
+                status: "pending",
+                experience,
+                title,
+                category,
+                appliedAt: new Date(),
+              },
+            },
+            { new: true }
+          );
+
+        if (!updatedRequest) {
+          return res
+            .status(404)
+            .json({ message: "Teacher request not found!" });
+        }
+
+        res.status(200).json({
+          message: "Request sent successfully!",
+          request: updatedRequest,
+        });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error sending teacher request!" });
+      }
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
