@@ -477,31 +477,110 @@ async function run() {
 
     // Make POST For The Payment Procedure
 
+    // app.post("/payments", async (req, res) => {
+    //   try {
+    //     const { transactionId, classId, userId, amount, enrolledAt } = req.body;
+    //     const paymentDetails = {
+    //       transactionId,
+    //       classId,
+    //       userId,
+    //       amount,
+    //       enrolledAt,
+    //     };
+
+    //     // Store payment and enrollment information
+    //     await paymentsCollection.insertOne(paymentDetails);
+
+    //     // Update enrollment count in the class
+    //     await classCollection.updateOne(
+    //       { _id: new ObjectId(classId) },
+    //       { $inc: { totalEnrolment: 1 } }
+    //     );
+
+    //     res
+    //       .status(200)
+    //       .send({ success: true, message: "Payment recorded successfully!" });
+    //   } catch (error) {
+    //     console.error("Error processing payment:", error);
+    //     res.status(500).send({ error: "Internal Server Error" });
+    //   }
+    // });
+
+    // // get all classes from db
+    app.get("/payments", async (req, res) => {
+      const result = await paymentsCollection.find().toArray();
+      res.send(result);
+    });
+
     app.post("/payments", async (req, res) => {
+      const { transactionId, classId, userEmail, teacherEmail, amount } =
+        req.body;
+
+      if (!transactionId || !classId || !userEmail || !teacherEmail) {
+        return res.status(400).send({ error: "Missing required fields." });
+      }
+
       try {
-        const { transactionId, classId, userId, amount, enrolledAt } = req.body;
-        const paymentDetails = {
+        // Save payment info in the payments collection
+        const paymentData = {
           transactionId,
           classId,
-          userId,
+          userEmail, // Enrolled user's email
+          teacherEmail, // Teacher's email
           amount,
-          enrolledAt,
+          enrolledAt: new Date(),
         };
 
-        // Store payment and enrollment information
-        await paymentsCollection.insertOne(paymentDetails);
+        await paymentsCollection.insertOne(paymentData);
 
-        // Update enrollment count in the class
+        // Update the total enrollment count in the class document
         await classCollection.updateOne(
           { _id: new ObjectId(classId) },
-          { $inc: { totalEnrolment: 1 } }
+          { $inc: { totalEnrolled: 1 } }
         );
 
-        res
-          .status(200)
-          .send({ success: true, message: "Payment recorded successfully!" });
+        res.status(200).send({ success: true, message: "Payment recorded." });
       } catch (error) {
         console.error("Error processing payment:", error);
+        res.status(500).send({ error: "Internal Server Error" });
+      }
+    });
+
+    // Get Enrolled Classes for the User
+
+    app.get("/enrolled-classes", async (req, res) => {
+      const { email } = req.query;
+
+      if (!email) {
+        return res.status(400).send({ error: "Missing user email in query." });
+      }
+
+      try {
+        const enrolledClasses = await paymentsCollection
+          .find({ userEmail: email })
+          .toArray();
+
+        if (enrolledClasses.length === 0) {
+          return res
+            .status(404)
+            .send({ error: "No enrolled classes found for this user." });
+        }
+
+        // Fetch full class details for each enrolled class
+        const classDetailsPromises = enrolledClasses.map(async (enrollment) => {
+          const classData = await classCollection.findOne({
+            _id: new ObjectId(enrollment.classId),
+          });
+          return {
+            ...enrollment,
+            classDetails: classData,
+          };
+        });
+
+        const result = await Promise.all(classDetailsPromises);
+        res.status(200).send(result);
+      } catch (error) {
+        console.error("Error fetching enrolled classes:", error);
         res.status(500).send({ error: "Internal Server Error" });
       }
     });
